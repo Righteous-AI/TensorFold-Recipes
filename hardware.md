@@ -16,7 +16,7 @@ RTX 5090  32,607 MiB, compute capability 12.0, power limit 600 W
 
 - Board: ASUS ProArt Z890. CPU: Intel Core Ultra 7 265K, 8 P-cores and 12 E-cores.
 - GPU driver: open kernel module 620.70.06. CUDA toolkit 13.5, nvcc V13.5.37 at `/usr/local/cuda-13.5`. Kernel `7.0.0-42-generic`.
-- Engine: TensorFold v1.2.3, commit `6ec5fa4c`, built with Zig 0.17.0 (`zig build -j10 -Dgpu=sm_120`). The binary is 49,464,584 bytes, sha256 `6384e0371f47572b919f3a06c70e573f18fd6ffad35ecae18bf807210c61bc19`. `ldd` shows libc only; the CUDA runtime is loaded when a server starts. The fatbins in the binary all report `release 13.5`, 106 for `sm_120` and one for `sm_120a`.
+- Engine: TensorFold v1.2.4, commit `267c5af6`, built with Zig 0.17.0 (`zig build -j10 -Dgpu=sm_120`). The binary is 50,235,784 bytes, sha256 `100ac2c1a0eb231d1ba1dbdac16613b6cf83892571eeed1ace1c3147c4e8b868`, and `--version` prints `tensorfold-native 1.2.4`. `ldd` shows libc only; the CUDA runtime is loaded when a server starts. Every CUDA fatbin marker in the binary reports `release 13.5` (110 occurrences of the string, and none for `release 13.4`), with `sm_120a` appearing once. The previous build, v1.2.3 at 49,464,584 bytes and sha256 `6384e0371f47572b919f3a06c70e573f18fd6ffad35ecae18bf807210c61bc19`, is kept beside it for rollback.
 - Storage: the pack lives on `/mnt/models`, a Samsung 9100 PRO 2 TB linked at 32.0 GT/s PCIe x4, the Gen5 volume on this box. The copy on the 4 TB volume, a 9100 PRO at 16.0 GT/s, stayed as a backup. A cold read of 22.6 GB is quicker on the Gen5 link; decode after the weights are resident is not affected by which one it comes from.
 - One process owns the card. Every engine unit on this host declares the others in `Conflicts=`, and only one can hold 32 GB.
 

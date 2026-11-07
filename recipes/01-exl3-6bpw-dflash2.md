@@ -4,9 +4,9 @@ One dense 27B on one RTX 5090, drafted, at the model's full context.
 
 | | |
 | --- | --- |
-| Engine | TensorFold v1.2.3, commit `6ec5fa4c`, native CUDA server |
+| Engine | TensorFold v1.2.4, commit `267c5af6`, native CUDA server |
 | Build | Zig 0.17.0, `zig build -j10 -Dgpu=sm_120 -Dnvcc=/usr/local/cuda-13.5/bin/nvcc` |
-| Binary | `zig-out/native/bin/tensorfold-native`, 49,464,584 bytes, sha256 `6384e0371f47572b919f3a06c70e573f18fd6ffad35ecae18bf807210c61bc19` |
+| Binary | `zig-out/native/bin/tensorfold-native`, 50,235,784 bytes, sha256 `100ac2c1a0eb231d1ba1dbdac16613b6cf83892571eeed1ace1c3147c4e8b868` |
 | Weights | Qwen3.8-27B EXL3 6.0 bpw, 6-bit head, `mul1` codebook, 22,624,940,803 bytes |
 | Drafter | `z-lab/Qwen3.8-27B-DFlash2` @ `50307d4c4cde6860d4eee73e2547cd786fe8e8a4`, BF16 on disk |
 | Endpoint | `0.0.0.0:12350`, model `qwen3.8-27b-exl3-6bpw`, key from `TENSORFOLD_KEY` (placeholder `change-me`) |
@@ -43,9 +43,21 @@ One dense 27B on one RTX 5090, drafted, at the model's full context.
 
 `serve --help` does not list `--kv-cache`, which is a gap in the usage string: the parser accepts it. Check a flag by running the server, not by reading `--help`.
 
-## The cold bench, 2026-11-07 12:10 UTC
+## The cold bench, 2026-11-07 17:17 UTC (v1.2.4)
 
 Five cold prompts, temperature 0, 256 tokens out, nothing reused, one pass on an idle card. `cached_tokens` 0 on all five, `finish=length` on all five, no errors.
+
+| Prompt tokens | TTFT | Prefill | Decode | Rounds | Draft accepted | Tokens a round |
+| --- | --- | --- | --- | --- | --- | --- |
+| 8,244 | 4.823 s | 1,709.2 tok/s | 177.4 tok/s | 63 | 195/900 (21.7%) | 4.06 |
+| 32,820 | 20.151 s | 1,628.7 tok/s | 153.8 tok/s | 68 | 188/931 (20.2%) | 3.76 |
+| 131,124 | 96.157 s | 1,363.6 tok/s | 128.2 tok/s | 68 | 187/797 (23.5%) | 3.76 |
+| 196,660 | 159.934 s | 1,229.6 tok/s | 119.9 tok/s | 66 | 190/699 (27.2%) | 3.88 |
+| 249,908 | 219.516 s | 1,138.5 tok/s | 119.0 tok/s | 62 | 194/638 (30.4%) | 4.13 |
+
+### The same pass on v1.2.3, 2026-11-07 12:10 UTC
+
+Kept for the version comparison. Same card, same pack, same flags, same prompt files.
 
 | Prompt tokens | TTFT | Prefill | Decode | Rounds | Draft accepted | Tokens a round |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -55,9 +67,11 @@ Five cold prompts, temperature 0, 256 tokens out, nothing reused, one pass on an
 | 196,660 | 165.363 s | 1,189.2 tok/s | 119.9 tok/s | 66 | 190/699 (27.2%) | 3.88 |
 | 249,908 | 227.189 s | 1,100.0 tok/s | 122.7 tok/s | 60 | 196/622 (31.5%) | 4.27 |
 
-Reading the acceptance column: DFlash2 proposes about 14 tokens a round and keeps about 3, so the ratio looks low while the throughput does not. Tokens a round, 3.76 to 4.27, is the figure to compare, and it sits inside the range the engine publishes for this drafter on this model. Acceptance rises with context on this pass, 21.7% to 31.5%, because the fox-prompt text is more predictable once a long prefix is in the window.
+v1.2.4 is 2.8 to 3.5 percent faster on prefill and time to first token at every length, which is the 1.2.4 last-layer tile change, and it returns byte-identical replies: the five finished lines carry the same reply hashes on both passes. Decode and draft acceptance match on the first four rows, same rounds and same accepted counts. [comparisons.md](../comparisons.md) has the row-by-row delta.
 
-Decode holds 119.9 to 177.4 tok/s across a 30-fold change in prompt length. Prefill falls from 1,661 to 1,100 tok/s over the same span, which is the attention term, and it is the EXL3 prompt GEMM rather than a misconfiguration: upstream measures the 3.00 bpw branch at 880–970 tok/s from 2k to 16k and 720–890 at 32k to 64k on a DGX Spark, and this 6.0 bpw pack on the 5090 is 1.2 to 1.9 times that.
+Reading the acceptance column: DFlash2 proposes about 14 tokens a round and keeps about 3, so the ratio looks low while the throughput does not. Tokens a round, 3.76 to 4.13, is the figure to compare, and it sits inside the range the engine publishes for this drafter on this model. Acceptance rises with context on this pass, 20.2% to 30.4%, because the fox-prompt text is more predictable once a long prefix is in the window.
+
+Decode holds 119.0 to 177.4 tok/s across a 30-fold change in prompt length. Prefill falls from 1,709 to 1,138 tok/s over the same span, which is the attention term, and it is the EXL3 prompt GEMM rather than a misconfiguration: upstream measures the 3.00 bpw branch at 880–970 tok/s from 2k to 16k and 720–890 at 32k to 64k on a DGX Spark, and this 6.0 bpw pack on the 5090 is 1.3 to 1.9 times that.
 
 Every reply was still reasoning when it reached `max_tokens`, so all 256 output tokens arrived as `reasoning_content`. Raise `max_tokens`, or send `chat_template_kwargs {"enable_thinking": false}`, when you want an answer rather than a chain of thought.
 
@@ -80,9 +94,22 @@ CUDA sm_120 device 0 (NVIDIA GeForce RTX 5090): model 19.91 GiB; 1 stream at onc
 profile: stable; registered overrides: none
 serving qwen3.8-27b-exl3-6bpw at http://0.0.0.0:12350/v1 (sampling: temperature 1.0,
 top_k 20, top_p 0.95; drafts: DFlash2 (/mnt/models/qwen/Qwen3.8-27B-DFlash2) + copies;
-context: 262144; loaded in 39.3s)
+context: 262144; loaded in 39.0s)
 ```
 
-Startup phases: `load=19.788s reserve=0.018s warmups=0.528s calibration=18.528s`. Host memory peak 23.1 GB.
+Startup phases on v1.2.4: `load=19.599s reserve=0.007s warmups=0.516s calibration=18.503s`, host memory peak 23.1 GB. The v1.2.3 boot read `loaded in 39.3s` with `load=19.788s reserve=0.018s warmups=0.528s calibration=18.528s`, and its memory line was character-identical to the one above.
 
 `libtfgrammar.so` is absent on this build, so structured output and required tool calls return HTTP 400. Build it with `zig build grammar -Dxgrammar=DIR` against xgrammar v0.2.8 if you need those. Plain chat and drafted decoding do not need it.
+
+## Keeping the build current
+
+The engine moves quickly and the flags above have held across tags, so an update is a rebuild plus a bench. On the host that runs this recipe:
+
+1. Confirm the card is idle and no other engine unit is holding it.
+2. `git fetch origin tag vX.Y.Z` then `git checkout --detach vX.Y.Z`. Revert any local edit to `zig/build/product.zig` first: git carries a dirty file across a detach when the blob matches upstream, and from v1.2.4 the tree needs no local wire at all.
+3. Copy the current binary aside, `zig-out/native/bin/.cuda13.5-vXYZ-backup/`, before you overwrite it.
+4. Build with the command in the table above. `--version` on the new binary is the check that needs no model and no GPU: `CUDA_VISIBLE_DEVICES="" ./tensorfold-native --version`.
+5. Re-check the flags by parsing them without a model, `CUDA_VISIBLE_DEVICES="" ./tensorfold-native serve /tmp/no-such-model --kv-cache fp8 --backend cuda`, which exits 1 on the missing path. A bad choice exits 2 with `invalid choice`. Read `serve --help` for shape only: it short-circuits before validating, and it omits `--kv-cache`.
+6. Restart the server and run the bench on an idle card, then compare rounds, accepted and the reply hashes against the previous pass. Matching reply hashes are the cheapest proof that a release changed speed and not behaviour.
+
+The serve script is the unit's `ExecStart`, so a flag edit needs no unit rewrite. A running process keeps the binary inode it opened, so a rebuild reaches the card only after the operator starts the unit again.
