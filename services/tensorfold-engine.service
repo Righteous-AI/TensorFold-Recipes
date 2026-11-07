@@ -20,6 +20,8 @@ Environment=PATH=/usr/local/cuda-13.5/bin:/usr/local/sbin:/usr/local/bin:/usr/sb
 Environment=TENSORFOLD_ROOT=/opt/tensorfold/tensorfold
 Environment=TENSORFOLD_MODEL=/mnt/models/qwen/Qwen3.8-27B-exl3-SC_6.00bpw_H6_V6
 Environment=TENSORFOLD_DRAFTER=/mnt/models/qwen/Qwen3.8-27B-DFlash2
+# Placeholder: set your own LAN token (or an EnvironmentFile=) before starting.
+Environment=TENSORFOLD_KEY=change-me
 ExecStart=/opt/tensorfold/tensorfold/serve-32g.sh
 Restart=no
 # The first load reads a 22.6 GB pack and then calibrates kernels: 39.3 s here.

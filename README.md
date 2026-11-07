@@ -78,13 +78,13 @@ Load took 39.3 s: 19.8 s to read the pack, 18.5 s of kernel calibration.
 
 ## Install
 
-The paths assume an install root of `/opt/tensorfold` and a checkout at `/opt/tensorfold/tensorfold`. Change `User`, `Group`, `WorkingDirectory` and the model paths to your layout. The API key is the LAN token `local`, the same one the other servers on this host use; the bind is `0.0.0.0:12350`, so keep it off the public internet.
+The paths assume an install root of `/opt/tensorfold` and a checkout at `/opt/tensorfold/tensorfold`. Change `User`, `Group`, `WorkingDirectory` and the model paths to your layout. The API key comes from `TENSORFOLD_KEY`; the script falls back to the placeholder `change-me`, so set your own LAN token before starting. The bind is `0.0.0.0:12350`, so keep it off the public internet.
 
 ```
 sudo cp services/tensorfold-engine.service /etc/systemd/system/tensorfold-engine.service
 sudo systemctl daemon-reload
 sudo systemctl start tensorfold-engine.service
-curl -sS http://127.0.0.1:12350/v1/models -H 'Authorization: Bearer local'
+curl -sS http://127.0.0.1:12350/v1/models -H "Authorization: Bearer $TENSORFOLD_KEY"
 ```
 
 Build, from a checkout, with Zig 0.17.0 and CUDA 13.5:

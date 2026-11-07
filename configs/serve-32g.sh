@@ -2,6 +2,8 @@
 # TensorFold native CUDA server, Qwen3.8-27B EXL3 6.0bpw with DFlash2, port 12350.
 # One process owns the GPU: stop the other engine units before starting this.
 # The build does not start this script.
+# Set TENSORFOLD_KEY to your own LAN token before starting; the fallback below is a
+# placeholder, not a working secret. The bind is all interfaces, so keep it firewalled.
 set -eu
 
 ROOT=${TENSORFOLD_ROOT:-/opt/tensorfold/tensorfold}
@@ -10,6 +12,7 @@ MODEL=${TENSORFOLD_MODEL:-/mnt/models/qwen/Qwen3.8-27B-exl3-SC_6.00bpw_H6_V6}
 DRAFT=${TENSORFOLD_DRAFTER:-/mnt/models/qwen/Qwen3.8-27B-DFlash2}
 NAME=${TENSORFOLD_NAME:-qwen3.8-27b-exl3-6bpw}
 PORT=${TENSORFOLD_PORT:-12350}
+KEY=${TENSORFOLD_KEY:-change-me}
 CONTEXT=${TENSORFOLD_CONTEXT:-262144}
 
 for p in "$MODEL" "$DRAFT"; do
@@ -27,7 +30,7 @@ fi
 
 exec "$BIN" serve "$MODEL" \
   --name "$NAME" \
-  --api-key local \
+  --api-key "$KEY" \
   --host 0.0.0.0 \
   --port "$PORT" \
   --backend cuda \

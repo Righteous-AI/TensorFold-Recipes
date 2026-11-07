@@ -9,7 +9,7 @@ One dense 27B on one RTX 5090, drafted, at the model's full context.
 | Binary | `zig-out/native/bin/tensorfold-native`, 49,464,584 bytes, sha256 `6384e0371f47572b919f3a06c70e573f18fd6ffad35ecae18bf807210c61bc19` |
 | Weights | Qwen3.8-27B EXL3 6.0 bpw, 6-bit head, `mul1` codebook, 22,624,940,803 bytes |
 | Drafter | `z-lab/Qwen3.8-27B-DFlash2` @ `50307d4c4cde6860d4eee73e2547cd786fe8e8a4`, BF16 on disk |
-| Endpoint | `0.0.0.0:12350`, model `qwen3.8-27b-exl3-6bpw`, key `local` |
+| Endpoint | `0.0.0.0:12350`, model `qwen3.8-27b-exl3-6bpw`, key from `TENSORFOLD_KEY` (placeholder `change-me`) |
 
 ## Flags
 
@@ -63,7 +63,7 @@ Every reply was still reasoning when it reached `max_tokens`, so all 256 output 
 
 ## Reproducing it
 
-The client harness is a small Python script that streams `/v1/chat/completions`, sends five saved prompts of 8,192 to 249,856 user tokens built from repeated `" fox"` with a checkpoint tokenizer, and records the first-token time and the last-token time from the client clock. The prompts are deterministic, so two engines see byte-identical input.
+The client harness is a small Python script on the host (`bench.py` — it lives beside the bench logs, is not shipped in this repo, and any streaming client that sends the same five prompts reproduces the table): it streams `/v1/chat/completions`, sends five saved prompts of 8,192 to 249,856 user tokens built from repeated `" fox"` with a checkpoint tokenizer, and records the first-token time and the last-token time from the client clock. The prompts are deterministic, so two engines see byte-identical input.
 
 ```
 .venv/bin/python -u bench.py 2>&1 | tee bench-$(date +%Y%m%d_%H%M).txt
