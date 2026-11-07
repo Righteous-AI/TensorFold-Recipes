@@ -1,0 +1,31 @@
+[Unit]
+Description=TensorFold Qwen3.8-27B EXL3 6.0bpw DFlash2 (port 12350)
+After=network-online.target
+# One process owns the RTX 5090. Name every other engine unit that takes the card.
+Conflicts=strata-engine.service strata-engine-dflash2.service strata-engine-vision.service infernix-engine.service basalt-engine.service basalt-engine-vision.service bloomery-engine.service
+
+[Service]
+Type=simple
+User=tensorfold
+Group=tensorfold
+WorkingDirectory=/opt/tensorfold/tensorfold
+LimitMEMLOCK=infinity
+LimitNOFILE=1048576
+Environment=HF_HUB_OFFLINE=1
+Environment=TRANSFORMERS_OFFLINE=1
+Environment=HF_DATASETS_OFFLINE=1
+Environment=CUDA_HOME=/usr/local/cuda-13.5
+Environment=CUDA_VISIBLE_DEVICES=0
+Environment=PATH=/usr/local/cuda-13.5/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=TENSORFOLD_ROOT=/opt/tensorfold/tensorfold
+Environment=TENSORFOLD_MODEL=/mnt/models/qwen/Qwen3.8-27B-exl3-SC_6.00bpw_H6_V6
+Environment=TENSORFOLD_DRAFTER=/mnt/models/qwen/Qwen3.8-27B-DFlash2
+ExecStart=/opt/tensorfold/tensorfold/serve-32g.sh
+Restart=no
+# The first load reads a 22.6 GB pack and then calibrates kernels: 39.3 s here.
+TimeoutStartSec=0
+TimeoutStopSec=180
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target

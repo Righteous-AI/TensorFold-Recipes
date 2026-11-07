@@ -1,0 +1,16 @@
+*.log
+.venv/
+__pycache__/
+.DS_Store
+.env
+.env.*
+data/
+*.bin
+*.gguf
+*.safetensors
+*.pack
+.idea/
+.vscode/
+logs/
+bench-*.txt
+results.csv
